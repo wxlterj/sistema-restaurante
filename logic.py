@@ -9,7 +9,8 @@ general_queue = Queue()
 priority_queue = PriorityQueue()
 
 def add_client(name, type, n):
-    client_id = uuid.uuid4()
+    # Id de 8 caracteres
+    client_id = uuid.uuid4().hex[:8]
     client = Client(client_id, name, type, n)
     if (client.type == c.REGULAR):
         general_queue.put(client)

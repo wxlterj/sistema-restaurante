@@ -36,7 +36,7 @@ class UI:
         self.frame_title.pack(pady=30)
 
         ttk.Label(self.frame_title, text="Sistema de Turnos", style="Title.TLabel").pack()
-        ttk.Label(self.frame_title, text="Gestión de cola con prioridades VIP y Online", style="Subtitle.TLabel").pack()
+        ttk.Label(self.frame_title, text="Gestión de cola del restaurante", style="Subtitle.TLabel").pack()
 
         # Frame principal
         self.frame_main = tk.Frame(self.root, bg="#faf9f7")
@@ -65,11 +65,11 @@ class UI:
         self.btn_regular.bind("<Button-1>", self.on_client_type_change)
         self.btn_regular.pack(side="left", expand=True, fill="x", padx=5)
 
-        self.btn_vip = ttk.Button(self.frame_types, text="👑 VIP")
+        self.btn_vip = ttk.Button(self.frame_types, text="👑 Prioritario")
         self.btn_vip.bind("<Button-1>", self.on_client_type_change)
         self.btn_vip.pack(side="left", expand=True, fill="x", padx=5)
 
-        self.btn_online = ttk.Button(self.frame_types, text="🌐 Online")
+        self.btn_online = ttk.Button(self.frame_types, text="🌐 Domicilio/Online")
         self.btn_online.bind("<Button-1>", self.on_client_type_change)
         self.btn_online.pack(side="left", expand=True, fill="x", padx=5)
 
@@ -104,23 +104,23 @@ class UI:
         
 
         ttk.Label(self.frame_header, text="🕒 Cola de Espera", style="SectionTitle.TLabel").pack(side="left")
-        ttk.Label(self.frame_header, text="0 personas", style="Counter.TLabel").pack(side="right", padx=5)
+        self.ticket_label = ttk.Label(self.frame_header, text="0 Turnos", style="Counter.TLabel")
+        self.ticket_label.pack(side="right", padx=5)
 
-        
-
+        # Lista con scrollbar
         # IA
-        self.canvas = tk.Canvas(self.frame_right)
+        self.canvas = tk.Canvas(self.frame_right, bg="white", highlightthickness=0)
+        self.canvas.pack(side="left", fill="both", expand=True)
         self.scrollbar = ttk.Scrollbar(self.frame_right, orient="vertical", command=self.canvas.yview)
         self.scrollbar.pack(side="right", fill="y")
-        self.canvas.pack(side="left", fill="both", expand=True)
         # /IA
 
-        self.frame_queue = tk.Frame(self.frame_right, bg="white")
-        self.frame_queue.pack(expand=True, fill="both", pady=30)
+        self.frame_queue = tk.Frame(self.canvas, bg="white")
+        #self.frame_queue.pack(expand=True, fill="both", pady=30)
 
         # IA
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        self.canvas.create_window((0,0), window=self.frame_queue, anchor="nw")
+        self.canvas_window = self.canvas.create_window((0,0), window=self.frame_queue, anchor="nw")
         # /IA
 
         # Mensaje de cola vacía
@@ -128,14 +128,29 @@ class UI:
         self.icon_queue.pack(pady=10)
         self.msg_queue = tk.Label(self.frame_queue, text="No hay clientes en espera", font=("Arial", 11), fg="#999", bg="white")
         self.msg_queue.pack()
+
+
         self.frame_queue.bind("<Configure>", self.on_configure)
         
+        # IA
+        self.canvas.bind_all("<MouseWheel>", self.on_mousewheel)
+        self.canvas.bind("<Configure>", self.on_canvas_configure)
+        # /IA
 
 
     # Acciones de la interfaz
     # IA
     def on_configure(self, event=None):
+        # Actualiza la región de desplazamiento del canvas para que abarque todo el contenido visible dentro (ajusta el scroll)
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def on_mousewheel(self, event):
+            self.canvas.yview_scroll(-1 * (event.delta // 120), "units")
+
+    def on_canvas_configure(self, event):
+        # Ajusta el ancho del frame interno al del canvas visible
+        canvas_width = event.width
+        self.canvas.itemconfig(self.canvas_window, width=canvas_width)
     # /IA
 
     def refresh_queue(self):
@@ -148,38 +163,46 @@ class UI:
         priority_queue_list = queue_to_list(copy_priority_queue(priority_queue))
         general_queue_list = queue_to_list(copy_queue(general_queue))
 
-        for (priority, n, client) in priority_queue_list:
-            card = TicketCard(self.frame_queue, client.n_order, client.name, client.id, client.type)
-            card.pack(fill="x", pady=5)
+        total = len(priority_queue_list) + len(general_queue_list)
+        self.ticket_label.config(text=f"{total} turnos")
 
-        for client in general_queue_list:
-            card = TicketCard(self.frame_queue, client.n_order, client.name, client.id, client.type)
-            card.pack(fill="x", pady=5)
+        if total==0:
+            self.icon_queue.pack(pady=10)
+            self.msg_queue.pack()
+        else:
+            for (priority, n, client) in priority_queue_list:
+                card = TicketCard(self.frame_queue, client.n_order, client.name, client.id, client.type)
+                card.pack(fill="x", pady=5)
+
+            for client in general_queue_list:
+                card = TicketCard(self.frame_queue, client.n_order, client.name, client.id, client.type)
+                card.pack(fill="x", pady=5)
+
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
         
 
             
 
     #  Función que se llama cada vez que se agrega un nuevo turno
-    def add_queue_separators(self):
-        # Verificar que ni la lista normal ni la que tiene prioridad estén vacías
-        if (not(general_queue.empty()) or not(priority_queue.empty())):
-            # Quitar el mensaje de cuando las colas están vacías
-            self.icon_queue.destroy()
-            self.msg_queue.destroy()
-            if (not(priority_queue.empty())):
-                ttk.Label(self.frame_queue, text="Prioritario", style="SectionTitle.TLabel").pack(anchor="nw")
-                ttk.Label(self.frame_queue, text="Online/Aplicación", style="SectionTitle.TLabel").pack(anchor="nw")
-            if (not(general_queue.empty())):
-                ttk.Label(self.frame_queue, text="Regular", style="SectionTitle.TLabel").pack(anchor="nw")
-        else:
-            self.icon_queue.pack(pady=10)
-            self.msg_queue.pack()
+    # def add_queue_separators(self):
+    #     # Verificar que ni la lista normal ni la que tiene prioridad estén vacías
+    #     if (not(general_queue.empty()) or not(priority_queue.empty())):
+    #         # Quitar el mensaje de cuando las colas están vacías
+    #         self.icon_queue.destroy()
+    #         self.msg_queue.destroy()
+    #         if (not(priority_queue.empty())):
+    #             ttk.Label(self.frame_queue, text="Prioritario", style="SectionTitle.TLabel").pack(anchor="nw")
+    #             ttk.Label(self.frame_queue, text="Online/Aplicación", style="SectionTitle.TLabel").pack(anchor="nw")
+    #         if (not(general_queue.empty())):
+    #             ttk.Label(self.frame_queue, text="Regular", style="SectionTitle.TLabel").pack(anchor="nw")
+    #     else:
+    #         self.icon_queue.pack(pady=10)
+    #         self.msg_queue.pack()
 
 
     # Mostrar el seleccionado
     def on_client_type_change(self, event=None):
-        print("Entré")
         if (event.widget.winfo_id() == self.btn_regular.winfo_id()):
             # IA
             self.btn_regular.config(style="Selected.TButton")
@@ -203,7 +226,7 @@ class UI:
         
     def on_add_to_queue(self, event=None):
         if (len(self.entry_name.get()) != 0 and self.type_selected != None):
-            # Agregar lo datos del cleinte en la cola
+            # Agregar lo datos del cleinte en la cola que corresponde
             add_client(self.entry_name.get(), self.type_selected, self.counter)
             
             # Restablecer a lo valores por defecto
@@ -212,7 +235,7 @@ class UI:
             self.btn_online.config(style="TButton")
             self.entry_name.delete(0, len(self.entry_name.get()))
             self.counter = self.counter + 1
-        self.refresh_queue()
+            self.refresh_queue()
 
         
 
@@ -241,7 +264,7 @@ class TicketCard(ttk.Frame):
         if type == c.VIP:
             vip_label = tk.Label(
                 name_frame,
-                text="👑 VIP",
+                text="👑 PRIORITARIO",
                 bg="#fff1c1",
                 fg="#a67c00",
                 font=("Arial", 8, "bold"),
@@ -251,7 +274,7 @@ class TicketCard(ttk.Frame):
         if type == c.ONLINE:
             vip_label = tk.Label(
                 name_frame,
-                text="🌐 ONLINE",
+                text="🌐 DOMICILIO/ONLINE",
                 bg="#fff1c1",
                 fg="#a67c00",
                 font=("Arial", 8, "bold"),
