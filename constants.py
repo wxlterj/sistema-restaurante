@@ -1,0 +1,4 @@
+#Constantes
+REGULAR = "REGULAR"
+VIP = "VIP"
+ONLINE = "ONLINE"
