@@ -156,21 +156,22 @@ class MainUI:
     # Acciones de la interfaz
     # IA
     def on_configure(self, event=None):
-        # Actualiza la región de desplazamiento del canvas para que abarque todo el contenido visible dentro (ajusta el scroll)
+        ''' Actualiza la región de desplazamiento del canvas para que abarque todo el contenido visible dentro (ajusta el scroll) '''
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def on_mousewheel(self, event):
-            self.canvas.yview_scroll(-1 * (event.delta // 120), "units")
+        ''' Permite desplazar el contenido del canvas con la rueda del ratón '''
+        self.canvas.yview_scroll(-1 * (event.delta // 120), "units")
 
     def on_canvas_configure(self, event):
-        # Ajusta el ancho del frame interno al del canvas visible
+        ''' Ajusta el ancho del frame interno al del canvas visible '''
         canvas_width = event.width
         self.canvas.itemconfig(self.canvas_window, width=canvas_width)
     # /IA
 
     def refresh_queue(self):
         # IA
-        # Limpia la UI anterior
+        ''' Limpia la UI anterior de la cola en donde se muestran los turnos '''
         for widget in self.frame_queue.winfo_children():
             widget.destroy()
         # /IA
@@ -199,6 +200,7 @@ class MainUI:
 
     # Mostrar el seleccionado
     def on_client_type_change(self, event=None):
+        ''' Cambia el tipo de cliente seleccionado y actualiza la UI '''
         if (event.widget.winfo_id() == self.btn_regular.winfo_id()):
             # IA
             self.btn_regular.config(style="Selected.TButton")
@@ -221,6 +223,7 @@ class MainUI:
             self.type_selected = "ONLINE"
         
     def on_add_to_queue(self, event=None):
+        ''' Agrega un nuevo cliente a la cola '''
         if (len(self.entry_name.get()) > 0 and self.type_selected != None and len(self.products_added) > 0):
             # Agregar lo datos del cleinte en la cola que corresponde
             add_client(self.entry_name.get(), self.type_selected, self.counter, self.products_added)
@@ -235,7 +238,7 @@ class MainUI:
             self.refresh_queue()
 
     def on_call_next(self, event=None):
-        # Logica para llamar al siguinte cliente
+        ''' Llama al siguiente cliente en la cola y lo muestra en la sección de turno actual '''
         if (l.current_client is None and (not priority_queue.empty() or not general_queue.empty())):
             if not priority_queue.empty():
                 _, _, l.current_client = priority_queue.get()
@@ -261,6 +264,7 @@ class MainUI:
             add_action(c.CALL, l.current_client)
         
     def on_complete_service(self, event= None):
+        ''' Completa el servicio del cliente actual y actualiza la UI de turno actual '''
         if (l.current_client is not None):
             add_action(c.SERVICE_COMPLETED, l.current_client)
             l.current_client = None
@@ -276,6 +280,7 @@ class MainUI:
             widget.destroy()
 
     def on_undo(self, event=None):
+        ''' Deshace la última acción realizada y actualiza la UI '''
         changed = undo()
         if changed:
             # Refrescar la lista y el turno actual
@@ -301,10 +306,12 @@ class MainUI:
                 ttk.Label(self.frame_turn, text="No hay turno activo", background="white", foreground="#999").pack(pady=5)
     
     def on_menu(self, event=None):
+        ''' Muestra el popup de selección de productos '''
         popup = ProductPopup(self.root, on_select=self.on_product_selected)
         popup.grab_set()
 
     def on_product_selected(self, product_id):
+        ''' Agrega el producto seleccionado a la lista de productos del nuevo cliente que va a ser agregado '''
         self.products_added.append(product_id)
 
 

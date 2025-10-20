@@ -16,6 +16,7 @@ actions_stack = []
 products = [Product("P001", "Hamburguesa", 12000), Product("P002", "Papas Fritas", 4000), Product("P003", "Refresco", 3500)]
 
 def add_client(name, type, n, order, id=None):
+    ''' Agrega un nuevo cliente a la cola correspondiente según su tipo '''
     # Id de 8 caracteres
     client_id = id if (id is not None) else uuid.uuid4().hex[:8]
     client = Client(client_id, name, type, n, order)
@@ -60,6 +61,7 @@ def copy_priority_queue(q):
 # /IA
 
 def add_action(type, client):
+    ''' Agrega una acción al stack de acciones para poder deshacerla luego '''
     MAX_ACTIONS = 5
     actions_stack.append((type, client))
     if len(actions_stack) > MAX_ACTIONS:
@@ -67,6 +69,7 @@ def add_action(type, client):
 
 
 def undo():
+    ''' Deshace la última acción realizada que se encuentra en el stack de acciones '''
     global current_client, general_queue, priority_queue
 
     if not actions_stack:
