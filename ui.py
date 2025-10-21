@@ -4,7 +4,7 @@ from tkinter import ttk
 import logic as l
 from logic import add_client, general_queue, priority_queue, queue_to_list, copy_queue, copy_priority_queue, add_action, undo, products
 import constants as c
-from tkinter import PhotoImage
+from tkinter import PhotoImage, messagebox
 
 class MainUI:
     def __init__(self):
@@ -236,6 +236,10 @@ class MainUI:
             self.counter = self.counter + 1
             self.products_added = []
             self.refresh_queue()
+            messagebox.showinfo("Cliente Agregado", "El cliente ha sido agregado a la cola correctamente.")
+        else:
+            messagebox.showwarning("Datos Incompletos", "Por favor, complete todos los campos antes de agregar un cliente a la cola.")
+
 
     def on_call_next(self, event=None):
         ''' Llama al siguiente cliente en la cola y lo muestra en la sección de turno actual '''
